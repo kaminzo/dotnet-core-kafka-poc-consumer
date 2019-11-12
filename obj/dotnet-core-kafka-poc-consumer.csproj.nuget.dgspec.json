@@ -38,7 +38,7 @@
           "dependencies": {
             "Confluent.Kafka": {
               "target": "Package",
-              "version": "(, )"
+              "version": "[1.2.1, )"
             }
           },
           "imports": [

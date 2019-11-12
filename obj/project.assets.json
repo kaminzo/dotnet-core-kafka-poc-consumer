@@ -205,7 +205,7 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.0": [
-      "Confluent.Kafka"
+      "Confluent.Kafka >= 1.2.1"
     ]
   },
   "packageFolders": {
@@ -245,7 +245,7 @@
         "dependencies": {
           "Confluent.Kafka": {
             "target": "Package",
-            "version": "(, )"
+            "version": "[1.2.1, )"
           }
         },
         "imports": [

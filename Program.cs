@@ -1,52 +1,57 @@
-﻿namespace dotnet_core_kafka_poc_consumer
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-    using System.Threading;
-    using Confluent.Kafka;
+﻿using System;
+using System.Threading;
+using Confluent.Kafka;
 
-    class Program
+namespace dotnet_core_kafka_poc_consumer
+{
+class Program
+{
+    public static void Main(string[] args)
     {
-        static void Main(string[] args)
+        var conf = new ConsumerConfig
+        { 
+            GroupId = "test-consumer-group",
+            BootstrapServers = "localhost:9092",
+            // Note: The AutoOffsetReset property determines the start offset in the event
+            // there are not yet any committed offsets for the consumer group for the
+            // topic/partitions of interest. By default, offsets are committed
+            // automatically, so in this example, consumption will only start from the
+            // earliest message in the topic 'my-topic' the first time you run the program.
+            AutoOffsetReset = AutoOffsetReset.Earliest
+        };
+
+        using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
         {
-            var config = new ConsumerConfig
-            {
-                GroupId = "banana-consumers",
-                BootstrapServers = "localhost:9092",
-                AutoOffsetReset = AutoOffsetReset.Earliest
+            c.Subscribe("my-topic");
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) => {
+                e.Cancel = true; // prevent the process from terminating.
+                cts.Cancel();
             };
 
-            using (var consumer = new ConsumerBuilder<Ignore, string>(config).Build())
+            try
             {
-                consumer.Subscribe("banana-topic");
-
-                CancellationTokenSource cts = new CancellationTokenSource();
-                Console.CancelKeyPress += (_, e) => {
-                    e.Cancel = true;
-                    cts.Cancel();
-                };
-
-                try
+                while (true)
                 {
-                    while (true) 
+                    try
                     {
-                        try 
-                        {
-                            var cr = consumer.Consume(cts.Token);
-                            Console.WriteLine(cr.Value);
-                        }
-                        catch ( ConsumeException e)
-                        {
-                            Console.WriteLine($"Error occured: {e.Error.Reason}");
-                        }
+                        var cr = c.Consume(cts.Token);
+                        Console.WriteLine($"Consumed message '{cr.Value}' at: '{cr.TopicPartitionOffset}'.");
+                    }
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"Error occured: {e.Error.Reason}");
                     }
                 }
-                catch (OperationCanceledException)
-                {
-                    consumer.Close();
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Ensure the consumer leaves the group cleanly and final offsets are committed.
+                c.Close();
             }
         }
     }
+}
+
 }
